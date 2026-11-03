@@ -143,6 +143,7 @@
               <button class="btn btn-soft" @click="pinjam(k)">Pinjamkan</button>
               <button class="btn btn-soft" @click="kembali(k)">Kembali</button>
               <button class="btn btn-soft" @click="hilangkan(k)">Hilang</button>
+              <button class="btn btn-danger" @click="hapusKit(k)">Hapus alat</button>
             </div>
           </div>
           <p v-if="errKit" class="error">{{ errKit }}</p>
@@ -170,8 +171,15 @@
           </div>
           <p v-if="!logLimbah.length" class="empty">Belum ada limbah tercatat.</p>
           <ul v-else class="log">
-            <li v-for="x in logLimbah.slice(0, 5)" :key="x.id"><span>{{ x.trip || 'Tanpa trip' }}</span><span class="muted">{{ labelTujuan(x.tujuan) }}</span><b>{{ x.kg }} kg</b></li>
+            <li v-for="x in logLimbah.slice(0, 5)" :key="x.id">
+              <span class="trip">{{ x.trip || 'Tanpa trip' }}</span><span class="muted">{{ labelTujuan(x.tujuan) }}</span><b>{{ x.kg }} kg</b>
+              <button class="x" :aria-label="'Hapus catatan ' + (x.trip || 'tanpa trip')" @click="hapusLog(x.id)">✕</button>
+            </li>
           </ul>
+          <div v-if="logLimbah.length" class="between log-foot">
+            <small class="muted">Menampilkan {{ Math.min(5, logLimbah.length) }} dari {{ logLimbah.length }} catatan</small>
+            <button class="btn btn-danger" @click="hapusSemuaLog">Hapus semua log</button>
+          </div>
         </section>
       </div>
     </main>
@@ -348,6 +356,11 @@ const tambahKit = () => {
   nk.nama = ''; errKit.value = ''
 }
 
+const hapusKit = (k) => {
+  if (!confirm(`Hapus "${k.nama}" dari daftar alat?`)) return
+  kit.value = kit.value.filter((x) => x.id !== k.id); errKit.value = ''
+}
+
 // --- LOG LIMBAH ---
 const TUJUAN = [{ k: 'daur', label: 'Didaur ulang' }, { k: 'guna', label: 'Digunakan ulang' }, { k: 'residu', label: 'Residu ke TPA' }]
 const labelTujuan = (k) => TUJUAN.find((t) => t.k === k)?.label
@@ -358,6 +371,8 @@ const catatLimbah = () => {
   logLimbah.value.unshift({ id: Date.now(), trip: wl.trip.trim(), tujuan: wl.tujuan, kg: wl.kg })
   wl.kg = 0; errLimbah.value = ''
 }
+const hapusLog = (id) => { logLimbah.value = logLimbah.value.filter((x) => x.id !== id) }
+const hapusSemuaLog = () => { if (confirm('Hapus semua catatan limbah?')) logLimbah.value = [] }
 const totalLimbah = computed(() => {
   const t = { daur: 0, guna: 0, residu: 0 }
   logLimbah.value.forEach((x) => (t[x.tujuan] += x.kg))
@@ -405,6 +420,7 @@ const bukti = computed(() => [
 
 <style scoped>
 .app {
+  overflow-x: clip;
   --jade: #0b4f3f; --jade-d: #073229; --teal: #8fd1c4; --sprout: #c9e4a0; --mist: #eef4f0;
   --line: #d7e4dd; --ink: #17302a; --mute: #5b726b; --warn: #b3261e;
   font-family: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -432,7 +448,7 @@ const bukti = computed(() => [
 
 /* hero */
 .hero { background: radial-gradient(120% 140% at 85% -20%, #2c8a74 0%, transparent 55%), radial-gradient(90% 120% at 0% 110%, #14624f 0%, transparent 60%), var(--jade); color: #fff; }
-.hero-in { display: grid; grid-template-columns: 1.4fr 1fr; gap: 40px; align-items: center; padding-top: 48px; padding-bottom: 48px; }
+.hero-in { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 40px; align-items: center; padding-top: 48px; padding-bottom: 48px; }
 .hero h1 { font-size: clamp(28px, 4vw, 44px); line-height: 1.12; font-weight: 700; letter-spacing: -0.015em; max-width: 18ch; }
 .hero p { margin-top: 16px; max-width: 54ch; color: #d4ece6; font-size: 16px; }
 .kpis { display: grid; gap: 10px; }
@@ -443,9 +459,9 @@ const bukti = computed(() => [
 .page-head { margin-bottom: 28px; max-width: 62ch; }
 .page-head h2 { font-size: 30px; font-weight: 700; color: var(--jade); } .page-head p { color: var(--mute); margin-top: 6px; }
 .h3 { font-size: 20px; font-weight: 700; color: var(--jade); margin-bottom: 4px; } .gap { margin: 40px 0 16px; }
-.card { background: #fff; border: 1px solid var(--line); border-radius: 28px 8px 28px 8px; padding: 24px; }
-.two { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
-.cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.card { background: #fff; border: 1px solid var(--line); border-radius: 28px 8px 28px 8px; padding: 24px; min-width: 0; }
+.two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+.cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
 .btn-row { display: flex; gap: 12px; } .btn-row.end { justify-content: flex-end; margin-top: 12px; }
 .btn { border: 2px solid transparent; border-radius: 999px; padding: 10px 20px; font-weight: 700; transition: background .15s; }
 .btn-primary { background: var(--jade); color: #fff; } .btn-primary:hover { background: var(--jade-d); }
@@ -459,13 +475,13 @@ const bukti = computed(() => [
 .field { display: grid; gap: 6px; font-size: 14px; font-weight: 600; } .field span { color: var(--mute); }
 .app input[type='text'], .app input[type='number'], .app select { width: 100%; background: var(--mist); border: 2px solid transparent; border-radius: 12px; padding: 11px 13px; font: inherit; font-weight: 600; color: var(--ink); }
 .app input:focus, .app select:focus { outline: none; border-color: var(--jade); background: #fff; }
-.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; } .full { grid-column: 1 / -1; }
+.grid2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; } .full { grid-column: 1 / -1; }
 .row-b { display: grid; gap: 6px; font-size: 14px; margin-top: 12px; }
 .bar { height: 8px; border-radius: 999px; background: rgba(255, 255, 255, .2); overflow: hidden; } .bar i { display: block; height: 100%; background: var(--teal); border-radius: inherit; transition: width .4s; }
 .bar.sm { background: var(--mist); height: 6px; } .bar.sm i { background: var(--jade); }
 
 /* kanban */
-.kanban { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; align-items: start; }
+.kanban { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; align-items: start; }
 .col { background: #fff; border: 1px solid var(--line); border-top: 4px solid var(--c); border-radius: 22px 6px 22px 6px; padding: 16px; display: grid; gap: 12px; }
 .col h3 { font-size: 15px; font-weight: 800; display: flex; align-items: center; gap: 8px; }
 .leaf { width: 30px; height: 30px; background: var(--mist); border-radius: 0 60% 0 60%; display: grid; place-items: center; font-size: 15px; }
@@ -476,7 +492,7 @@ const bukti = computed(() => [
 .add { border: 2px dashed var(--line); background: none; color: var(--mute); border-radius: 14px; padding: 12px; font-weight: 700; } .add:hover { background: var(--mist); color: var(--jade); }
 
 /* calculator */
-.calc { display: grid; grid-template-columns: 1.25fr 1fr; gap: 32px; align-items: start; }
+.calc { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 32px; align-items: start; }
 .chips { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
 .chip { display: flex; align-items: center; gap: 8px; background: #fff; border: 2px solid var(--line); border-radius: 999px; padding: 9px 18px; font-weight: 700; color: var(--mute); }
 .chip:hover { border-color: var(--teal); } .chip.on { border-color: var(--jade); background: var(--jade); color: #fff; }
@@ -502,25 +518,28 @@ const bukti = computed(() => [
 /* material */
 .kit { border-top: 1px solid var(--line); padding: 16px 0; display: grid; gap: 10px; }
 .kit-stats { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; color: var(--mute); } .kit-stats b { color: var(--ink); }
-.kit-act { display: flex; gap: 8px; align-items: center; } .kit-act input { width: 72px; flex: none; }
+.kit-act { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; } .kit-act input { width: 72px; flex: none; }
 .addrow { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; } .addrow input[type='text'] { flex: 2 1 160px; width: auto; } .addrow input[type='number'], .addrow select { flex: 1 1 90px; width: auto; }
 .diversi { margin: 20px 0 4px; display: flex; align-items: baseline; gap: 12px; } .diversi strong { font-size: 40px; font-weight: 800; color: var(--jade); } .diversi span { color: var(--mute); font-size: 14px; }
 .log { list-style: none; margin-top: 16px; display: grid; gap: 6px; font-size: 13px; }
-.log li { display: grid; grid-template-columns: 1fr auto auto; gap: 12px; padding: 8px 12px; background: var(--mist); border-radius: 10px; }
+.log li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto; gap: 10px; align-items: center; padding: 8px 12px; background: var(--mist); border-radius: 10px; }
+.log .trip { overflow-wrap: anywhere; } .log-foot { margin-top: 12px; flex-wrap: wrap; }
+.x { background: none; border: 0; color: var(--mute); width: 28px; height: 28px; border-radius: 50%; } .x:hover { background: #fde8e6; color: var(--warn); }
+.btn-danger { background: #fff; border-color: #efc5c1; color: var(--warn); font-size: 13px; padding: 8px 14px; } .btn-danger:hover { background: #fde8e6; }
 
 /* passport */
 .addpass { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 24px; } .addpass input { flex: 1 1 200px; width: auto; }
 .passport { background: #fff; border: 2px solid var(--jade); border-radius: 28px 8px 28px 8px; padding: 20px; display: grid; gap: 14px; background-image: linear-gradient(var(--mist), var(--mist)); background-size: 100% 64px; background-repeat: no-repeat; }
 .passport header { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; } .passport h4 { font-size: 19px; color: var(--jade); } .passport small { color: var(--mute); }
 .lvl { background: var(--jade); color: #fff; }
-.stamps { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
-.stamp { background: none; border: 0; display: grid; justify-items: center; gap: 4px; padding: 0; font-size: 10px; font-weight: 700; color: var(--mute); }
+.stamps { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; }
+.stamp { background: none; border: 0; display: grid; justify-items: center; gap: 4px; padding: 0; font-size: 10px; min-width: 0; overflow-wrap: anywhere; font-weight: 700; color: var(--mute); }
 .stamp i { font-style: normal; width: 46px; height: 46px; border-radius: 50%; border: 2px dashed #a9c2b8; display: grid; place-items: center; font-size: 18px; transition: transform .25s, background .2s; }
 .stamp:hover i { border-color: var(--jade); }
 .stamp.earned { color: var(--jade); } .stamp.earned i { background: var(--jade); color: var(--sprout); border: 2px solid var(--teal); outline: 2px solid var(--jade); outline-offset: 1px; transform: rotate(-8deg); font-weight: 800; }
 
 /* portofolio */
-.bukti dl { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 18px; }
+.bukti dl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 18px; }
 .bukti dl div { background: var(--mist); border-radius: 14px; padding: 12px; } .bukti dd { font-size: 26px; font-weight: 800; color: var(--jade); } .bukti dt { font-size: 12px; color: var(--mute); }
 .pf { display: grid; gap: 16px; } .pf header { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; } .pf h4 { font-size: 18px; }
 .pf dl { background: var(--mist); border-radius: 12px; padding: 14px; display: grid; gap: 8px; font-size: 14px; } .pf dl div { display: flex; justify-content: space-between; } .pf dt { color: var(--mute); } .pf dd { font-weight: 700; }
@@ -533,12 +552,16 @@ const bukti = computed(() => [
 .footer { background: var(--jade-d); color: var(--teal); font-size: 13px; padding: 22px 0; }
 
 @media (max-width: 1000px) {
-  .kanban { grid-template-columns: repeat(2, 1fr); } .calc, .hero-in, .two { grid-template-columns: 1fr; }
-  .result-col { position: static; } .cards { grid-template-columns: repeat(2, 1fr); }
+  .kanban { grid-template-columns: repeat(2, minmax(0, 1fr)); } .calc, .hero-in, .two { grid-template-columns: minmax(0, 1fr); }
+  .result-col { position: static; } .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 640px) {
   .header-in { height: auto; flex-direction: column; align-items: stretch; padding-top: 12px; padding-bottom: 8px; } .nav { overflow-x: auto; }
-  .kanban, .cards, .grid2, .bukti dl { grid-template-columns: 1fr; } .wrap { padding: 0 16px; }
+  .kanban, .cards, .grid2, .bukti dl { grid-template-columns: minmax(0, 1fr); } .wrap { padding: 0 16px; }
+  .page { padding-top: 28px; } .page-head h2 { font-size: 26px; } .card { padding: 18px; } .hero-in { padding-top: 32px; padding-bottom: 32px; gap: 24px; }
+  .app input[type='text'], .app input[type='number'], .app select { font-size: 16px; }
+  .btn { min-height: 44px; } .chip { padding: 9px 14px; } .kit-act input { width: 64px; } .kit-act .btn { flex: 1 1 auto; }
+  .addrow > * { flex: 1 1 100% !important; } .addpass input { flex-basis: 100%; } .big-num { font-size: 38px; } .diversi strong { font-size: 34px; }
 }
 @media (prefers-reduced-motion: reduce) { .app * { transition: none !important; } }
 </style>
